@@ -88,8 +88,8 @@ class LearningAgent(Agent):
         # With the hand-engineered features, this learning process gets entirely negated.
         
         # Set 'state' as a tuple of relevant data for the agent        
-        state = (inputs['light'],waypoint,inputs['oncoming'],inputs['left'],inputs['right'])
-        #state = (inputs['light'],waypoint,inputs['oncoming'],inputs['left'])
+        #state = (inputs['light'],waypoint,inputs['oncoming'],inputs['left'],inputs['right'])
+        state = (inputs['light'],waypoint,inputs['oncoming'],inputs['left'])
 
         return state
 
@@ -143,12 +143,15 @@ class LearningAgent(Agent):
         if self.learning == False:
             action = random.choice(self.valid_actions)
         else:
-            possible_actions = []
-            max_Q = self.get_maxQ(state)
-            for key in self.Q[state].keys():
-                if self.Q[state][key] == max_Q:
-                    possible_actions.append(key)
-            action = random.choice(possible_actions)
+            if self.epsilon > 0.01 and self.epsilon > random.random():
+                action = random.choice(self.valid_actions)
+            else:
+                possible_actions = []
+                max_Q = self.get_maxQ(state)
+                for key in self.Q[state].keys():
+                    if self.Q[state][key] == max_Q:
+                        possible_actions.append(key)
+                action = random.choice(possible_actions)
 
         return action
 
@@ -165,8 +168,9 @@ class LearningAgent(Agent):
         #   Use only the learning rate 'alpha' (do not use the discount factor 'gamma')
         """self.Q[state][action] = self.Q[state][action]*(1 - self.alpha) + \
         self.alpha*(reward + self.Q[state][action])"""
-        self.Q[state][action] = self.Q[state][action]*(1 - self.alpha) + \
-        self.alpha*(reward)
+        if self.learning:
+            self.Q[state][action] = self.Q[state][action]*(1 - self.alpha) + \
+            self.alpha*(reward)
 
 
         return
