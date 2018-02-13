@@ -8,7 +8,7 @@ class LearningAgent(Agent):
     """ An agent that learns to drive in the Smartcab world.
         This is the object you will be modifying. """ 
 
-    def __init__(self, env, learning=False, epsilon=1.0, alpha=0.5):
+    def __init__(self, env, learning=False, epsilon=1.0, alpha=0.5, a = 0.1):
         super(LearningAgent, self).__init__(env)     # Set the agent in the evironment 
         self.planner = RoutePlanner(self.env, self)  # Create a route planner
         self.valid_actions = self.env.valid_actions  # The set of valid actions
@@ -18,13 +18,15 @@ class LearningAgent(Agent):
         self.Q = dict()          # Create a Q-table which will be a dictionary of tuples
         self.epsilon = epsilon   # Random exploration factor
         self.alpha = alpha       # Learning factor
+        #self.a is the decaying constant, no need to tie the decaying equation or the exploration 
+        #factor with the alpha, leave it separate
+        self.a = a
 
         ###########
         ## TO DO ##
         ###########
         # Set any additional class parameters as needed
         self.trial_num = 0
-        self.a = 0
 
 
     def reset(self, destination=None, testing=False):
@@ -46,14 +48,12 @@ class LearningAgent(Agent):
             self.epsilon = 0
             self.alpha = 0
         else:
-            self.decay_function(func_val = 4)
+            self.decay_function(func_val = 5)
 
         return None
 
     def decay_function(self,func_val):
         """ if func_val == 1 then linear else exponential"""
-        #self.a = 0.01
-        self.a = self.alpha
         self.trial_num+=1
         if func_val == 1:
             self.epsilon -= 0.05
@@ -68,7 +68,7 @@ class LearningAgent(Agent):
         elif func_val == 5:
             self.epsilon = math.cos(self.a*self.trial_num)
         elif func_val == 6:
-            self.epsilon = 1.0/(self.trial_num**2 - self.alpha*self.trial_num)
+            self.epsilon = 1.0/(self.trial_num**2 - self.a*self.trial_num)
         elif func_val == 7:
         	self.epsilon = 1.0/(self.trial_num**2 - self.a*self.trial_num)
         elif func_val == 8:
@@ -125,7 +125,11 @@ class LearningAgent(Agent):
         # When learning, check if the 'state' is not in the Q-table
         # If it is not, create a new dictionary for that state
         #   Then, for each action available, set the initial Q-value to 0.0
+        
+        # Check for learning, make the q table only if the learning is set to true
 
+        if self.learning == False:
+            return
         if state not in self.Q:
             self.Q[state] = dict(zip(self.valid_actions,[0]*len(self.valid_actions)))
         
@@ -151,7 +155,7 @@ class LearningAgent(Agent):
         if self.learning == False:
             action = random.choice(self.valid_actions)
         else:
-            if self.epsilon > 0.01 and self.epsilon > random.random():
+            if self.epsilon > random.random():
                 action = random.choice(self.valid_actions)
             else:
                 possible_actions = []
@@ -216,7 +220,7 @@ def run():
     #   learning   - set to True to force the driving agent to use Q-learning
     #    * epsilon - continuous value for the exploration factor, default is 1
     #    * alpha   - continuous value for the learning rate, default is 0.5
-    agent = env.create_agent(LearningAgent,learning=True,alpha = 0.01)
+    agent = env.create_agent(LearningAgent,learning=True,alpha = 0.4,a = 0.01)
     
     ##############
     # Follow the driving agent
@@ -238,7 +242,7 @@ def run():
     # Flags:
     #   tolerance  - epsilon tolerance before beginning testing, default is 0.05 
     #   n_test     - discrete number of testing trials to perform, default is 0
-    sim.run(n_test = 100,tolerance = 0.001)
+    sim.run(n_test = 100,tolerance = 0.0001)
 
 
 if __name__ == '__main__':
